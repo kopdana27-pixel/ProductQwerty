@@ -1,5 +1,10 @@
-name: Build APK
-on: [push, workflow_dispatch]
+name: Build ProductQwerty
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -10,8 +15,20 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v4
-      - run: gradle assembleDebug
+        with:
+          gradle-version: '8.9'
+      - name: Build APK
+        run: gradle assembleDebug
+      - name: Rename APK
+        run: cp app/build/outputs/apk/debug/app-debug.apk ProductQwerty.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: ProductQwerty
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: ProductQwerty-APK
+          path: ProductQwerty.apk
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: productqwerty-${{ github.run_number }}
+          name: ProductQwerty build ${{ github.run_number }}
+          files: ProductQwerty.apk
+          make_latest: true
